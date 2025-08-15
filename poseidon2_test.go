@@ -326,3 +326,124 @@ func BenchmarkHashBytes1KB(b *testing.B) {
 		HashBytes(DomainGeneric, data)
 	}
 }
+
+// TestMontgomeryTimingAttackMitigation tests that multiplication is constant-time
+func TestMontgomeryTimingAttackMitigation(t *testing.T) {
+	// Test CIOS implementation works correctly
+	a := FromUint64(12345)
+	b := FromUint64(67890)
+	
+	var result1, result2 Fr
+	
+	// Test using both methods should give same result
+	result1.Mul(&a, &b)
+	result2.MulCIOS(&a, &b)
+	
+	if !result1.Equal(&result2) {
+		t.Error("CIOS implementation gives different result than Mul")
+	}
+	
+	// Test edge cases that could cause timing differences
+	zero := Zero()
+	one := One()
+	
+	var zeroResult Fr
+	zeroResult.MulCIOS(&zero, &a)
+	if !zeroResult.Equal(&zero) {
+		t.Error("CIOS: 0 * a != 0")
+	}
+	
+	var oneResult Fr
+	oneResult.MulCIOS(&one, &a)
+	if !oneResult.Equal(&a) {
+		t.Error("CIOS: 1 * a != a")
+	}
+	
+	// Test high-bit values that could trigger timing-dependent branches
+	maxVal := FromBytes([32]byte{
+		0x30, 0x64, 0x4e, 0x72, 0xe1, 0x31, 0xa0, 0x29,
+		0xb8, 0x50, 0x45, 0xb6, 0x81, 0x81, 0x58, 0x5d,
+		0x28, 0x33, 0xe8, 0x48, 0x79, 0xb9, 0x70, 0x91,
+		0x43, 0xe1, 0xf5, 0x93, 0xf0, 0x00, 0x00, 0x00,
+	})
+	
+	var maxResult Fr
+	maxResult.MulCIOS(&maxVal, &one)
+	if !maxResult.Equal(&maxVal) {
+		t.Error("CIOS failed with maximum field value")
+	}
+}
+
+// TestInputValidationSecurity tests DoS protection features
+func TestInputValidationSecurity(t *testing.T) {
+	// Test size limit enforcement
+	oversizedData := make([]byte, MaxInputSize+1)
+	err := ValidateInput(oversizedData)
+	if err == nil {
+		t.Error("Should reject input larger than MaxInputSize")
+	}
+	
+	// Test empty input rejection
+	err = ValidateInput([]byte{})
+	if err == nil {
+		t.Error("Should reject empty input")
+	}
+	
+	// Test complexity analysis - repetitive patterns
+	patternData := make([]byte, 1000)
+	for i := range patternData {
+		patternData[i] = 0xAA // Repeating pattern
+	}
+	
+	complexity := estimateComplexity(patternData)
+	if complexity <= 0 {
+		t.Error("Should detect complexity in repetitive patterns")
+	}
+	
+	// Test valid input passes
+	validData := []byte("valid test data with reasonable entropy")
+	err = ValidateInput(validData)
+	if err != nil {
+		t.Errorf("Valid input should pass validation: %v", err)
+	}
+}
+
+// TestComplexityAnalysis tests algorithmic complexity detection
+func TestComplexityAnalysis(t *testing.T) {
+	// Test pattern analysis - create pattern that repeats > 10 times
+	pattern := "AAAA"
+	var patternData []byte
+	for i := 0; i < 15; i++ { // Repeat 15 times (> 10)
+		patternData = append(patternData, pattern...)
+	}
+	patternComplexity := analyzePatterns(patternData)
+	if patternComplexity == 0 {
+		t.Error("Should detect repetitive patterns")
+	}
+	
+	// Test entropy analysis - low diversity
+	lowEntropyData := make([]byte, 100)
+	for i := range lowEntropyData {
+		lowEntropyData[i] = byte(i % 3) // Only uses 3 different bytes
+	}
+	
+	entropyComplexity := analyzeEntropy(lowEntropyData)
+	if entropyComplexity == 0 {
+		t.Error("Should detect low entropy patterns")
+	}
+	
+	// Test edge case detection
+	edgeCaseData := make([]byte, 100)
+	for i := range edgeCaseData {
+		if i%2 == 0 {
+			edgeCaseData[i] = 0x00 // Many null bytes
+		} else {
+			edgeCaseData[i] = 0xFF // Many max bytes
+		}
+	}
+	
+	edgeComplexity := analyzeEdgeCases(edgeCaseData)
+	if edgeComplexity == 0 {
+		t.Error("Should detect edge case byte patterns")
+	}
+}

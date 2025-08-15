@@ -104,56 +104,63 @@ func (f Fr) ToBytes32() [32]byte {
 }
 
 // Mul performs Montgomery multiplication: (a * b * R^(-1)) mod r
-// Uses simple bit-by-bit Montgomery reduction algorithm (reference implementation)
+// Uses CIOS (Coarsely Integrated Operand Scanning) algorithm for constant-time operations
 func (z *Fr) Mul(x, y *Fr) *Fr {
-	// First compute the regular multiplication x * y
-	var t [8]uint64 // Need 8 limbs for 256-bit * 256-bit multiplication
+	return z.MulCIOS(x, y)
+}
+
+// MulCIOS performs constant-time Montgomery multiplication using CIOS algorithm
+// This prevents timing attacks by eliminating data-dependent branches
+func (z *Fr) MulCIOS(x, y *Fr) *Fr {
+	var t [5]uint64 // Working array: 4 limbs + 1 overflow
 	
-	// Multi-precision multiplication: t = x * y
+	// CIOS Montgomery multiplication algorithm
 	for i := 0; i < 4; i++ {
-		var carry uint64
+		var carry uint64 = 0
+		
+		// Multiply and accumulate: t = t + x[i] * y
 		for j := 0; j < 4; j++ {
 			hi, lo := bits.Mul64(x[i], y[j])
-			sum, c1 := bits.Add64(t[i+j], lo, 0)
+			sum, c1 := bits.Add64(t[j], lo, 0)
 			sum, c2 := bits.Add64(sum, carry, 0)
-			t[i+j] = sum
+			t[j] = sum
 			carry = hi + c1 + c2
 		}
-		t[i+4] = carry
+		t[4] = carry
+		
+		// Montgomery reduction step: m = t[0] * nPrime mod 2^64
+		m := t[0] * nPrime
+		
+		// Add m * r to t (this makes t[0] = 0)
+		carry = 0
+		for j := 0; j < 4; j++ {
+			hi, lo := bits.Mul64(m, rModulus[j])
+			sum, c1 := bits.Add64(t[j], lo, 0)
+			sum, c2 := bits.Add64(sum, carry, 0)
+			t[j] = sum
+			carry = hi + c1 + c2
+		}
+		
+		// Add carry to t[4]
+		sum, c := bits.Add64(t[4], carry, 0)
+		t[4] = sum
+		
+		// Shift right by one limb (constant-time)
+		t[0] = t[1]
+		t[1] = t[2] 
+		t[2] = t[3]
+		t[3] = t[4]
+		t[4] = c // Overflow from addition
 	}
 	
-	// Montgomery reduction: for each bit position, if lowest bit is 1, add modulus
-	for i := 0; i < 256; i++ { // 256 bits to reduce
-		if t[0]&1 == 1 {
-			// Add modulus: t += r
-			var carry uint64
-			for j := 0; j < 4; j++ {
-				sum, c := bits.Add64(t[j], rModulus[j], carry)
-				t[j] = sum
-				carry = c
-			}
-			// Propagate carry through upper limbs
-			for j := 4; j < 8 && carry > 0; j++ {
-				sum, c := bits.Add64(t[j], 0, carry)
-				t[j] = sum
-				carry = c
-			}
-		}
-		// Right shift by 1 bit: t >>= 1
-		for j := 0; j < 7; j++ {
-			t[j] = (t[j] >> 1) | (t[j+1] << 63)
-		}
-		t[7] >>= 1
-	}
-	
-	// Final conditional subtraction: if t >= r, subtract r
-	// Result is now in t[0..3]
+	// Copy result to z
 	z[0], z[1], z[2], z[3] = t[0], t[1], t[2], t[3]
 	
+	// Final constant-time conditional subtraction
 	var diff Fr
 	borrow := diff.sub(z, &rModulus)
 	
-	// If no borrow (t >= r), use the subtracted result
+	// Use constant-time conditional move: if z >= r (borrow=0), use diff
 	z.cmov(z, &diff, 1-borrow)
 	
 	return z
