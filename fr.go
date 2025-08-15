@@ -67,61 +67,6 @@ func FromUint64(x uint64) Fr {
 	return result
 }
 
-// Helper functions to avoid importing math/bits
-func multiplyUint64(a, b uint64) (hi, lo uint64) {
-	const mask32 = 1<<32 - 1
-	a0, a1 := a&mask32, a>>32
-	b0, b1 := b&mask32, b>>32
-	
-	c0 := a0 * b0
-	c1 := a1*b0 + c0>>32
-	c2 := a0*b1 + c1&mask32
-	c3 := a1*b1 + c1>>32 + c2>>32
-	
-	lo = c0&mask32 + c2<<32
-	hi = c3
-	return
-}
-
-func addUint64(a, b, carry uint64) (sum, newCarry uint64) {
-	sum = a + b + carry
-	newCarry = 0
-	if sum < a || (sum == a && (b > 0 || carry > 0)) {
-		newCarry = 1
-	}
-	return
-}
-
-func reduceUint256(x [4]uint64) Fr {
-	// Simple reduction: if x >= r, subtract r
-	var result Fr = Fr(x)
-	
-	// Check if x >= r
-	needsReduction := false
-	for i := 3; i >= 0; i-- {
-		if result[i] > rModulus[i] {
-			needsReduction = true
-			break
-		} else if result[i] < rModulus[i] {
-			break
-		}
-	}
-	
-	if needsReduction {
-		// Subtract r
-		borrow := uint64(0)
-		for i := 0; i < 4; i++ {
-			old := result[i]
-			result[i] = result[i] - rModulus[i] - borrow
-			borrow = 0
-			if result[i] > old {
-				borrow = 1
-			}
-		}
-	}
-	
-	return result
-}
 
 // FromBytes converts a 32-byte big-endian representation to Montgomery form
 func FromBytes(data [32]byte) Fr {
