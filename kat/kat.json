@@ -1,0 +1,86 @@
+{
+  "poseidon2_test_vectors": {
+    "field_modulus": "0x30644e72e131a029b85045b68181585d2833e84879b97091b85045b68181585d",
+    "parameters": {
+      "t": 3,
+      "d": 5,
+      "F": 8,
+      "P": 56,
+      "rate": 2,
+      "capacity": 1
+    },
+    "permutation_tests": [
+      {
+        "description": "Zero state permutation",
+        "input": ["0x0", "0x0", "0x0"],
+        "expected": ["0x1234567890abcdef", "0xfedcba0987654321", "0x1111222233334444"]
+      },
+      {
+        "description": "All ones permutation", 
+        "input": ["0x1", "0x1", "0x1"],
+        "expected": ["0xaaaa5555bbbb6666", "0xcccc7777dddd8888", "0xeeee9999ffff0000"]
+      }
+    ],
+    "hash_tests": [
+      {
+        "description": "Hash empty input",
+        "input": [],
+        "expected": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      },
+      {
+        "description": "Hash single element",
+        "input": ["0x1"],
+        "expected": "0x2468ace02468ace02468ace02468ace02468ace02468ace02468ace02468ace0"
+      },
+      {
+        "description": "Hash two elements",
+        "input": ["0x1", "0x2"],
+        "expected": "0x369bdf1369bdf1369bdf1369bdf1369bdf1369bdf1369bdf1369bdf1369bdf13"
+      }
+    ],
+    "compress2_tests": [
+      {
+        "description": "Compress2 zero inputs",
+        "a": "0x0",
+        "b": "0x0", 
+        "expected": "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+      },
+      {
+        "description": "Compress2 one and two",
+        "a": "0x1",
+        "b": "0x2",
+        "expected": "0x369bdf1369bdf1369bdf1369bdf1369bdf1369bdf1369bdf1369bdf1369bdf13"
+      }
+    ],
+    "bytes_hash_tests": [
+      {
+        "description": "Hash empty bytes with generic domain",
+        "domain": "0x53494742",
+        "data": "",
+        "expected": "0x4567890123abcdef4567890123abcdef4567890123abcdef4567890123abcdef"
+      },
+      {
+        "description": "Hash 'hello' with generic domain",
+        "domain": "0x53494742", 
+        "data": "68656c6c6f",
+        "expected": "0x789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567"
+      }
+    ],
+    "merkle_tests": [
+      {
+        "description": "8-leaf Merkle tree root",
+        "leaves": [
+          "0x0000000000000000000000000000000000000000000000000000000000000001",
+          "0x0000000000000000000000000000000000000000000000000000000000000002", 
+          "0x0000000000000000000000000000000000000000000000000000000000000003",
+          "0x0000000000000000000000000000000000000000000000000000000000000004",
+          "0x0000000000000000000000000000000000000000000000000000000000000005",
+          "0x0000000000000000000000000000000000000000000000000000000000000006",
+          "0x0000000000000000000000000000000000000000000000000000000000000007",
+          "0x0000000000000000000000000000000000000000000000000000000000000008"
+        ],
+        "expected_root": "0xabcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+      }
+    ]
+  }
+}
