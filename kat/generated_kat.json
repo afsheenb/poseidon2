@@ -1,0 +1,138 @@
+{
+  "field_modulus": "0x30644e72e131a029b85045b68181585d2833e84879b97091b85045b68181585d",
+  "parameters": {
+    "F": 8,
+    "P": 56,
+    "capacity": 1,
+    "d": 5,
+    "rate": 2,
+    "t": 3
+  },
+  "permutation_tests": [
+    {
+      "description": "Zero state permutation",
+      "input": [
+        "0x0",
+        "0x0",
+        "0x0"
+      ],
+      "expected": [
+        "0x151e92826ab6c8f53c69d8abce416c14d87cea2e26235418fe8c98f60270f087",
+        "0x0fc1acbde038fb13f07cd76f990ee75aea3614ca2a1b31e5116b7285958a105d",
+        "0x1b06d08e819d069efefa27873b1921be43e861d55998c4dce1598541e2c7fe15"
+      ]
+    },
+    {
+      "description": "All ones permutation",
+      "input": [
+        "0x1",
+        "0x1",
+        "0x1"
+      ],
+      "expected": [
+        "0x2a2ad796833fdadf6b898f6244033db6b3a3f3d8a1bb4a2e164caa84ae0adae5",
+        "0x003d5c5e35efbd4f6843808c5fb659768653b9d1c5fbb3d92e0c6ba006433b17",
+        "0x2039deaa7e51129b28668adaef60d356b5660e61d9effca02ed1ab09dd25c3ae"
+      ]
+    },
+    {
+      "description": "Sequential elements [1, 2, 3]",
+      "input": [
+        "0x1",
+        "0x2",
+        "0x3"
+      ],
+      "expected": [
+        "0x0dc339a1f0ec0eae1713edfced7ca9e945653569d1edfe62b201628cb9028738",
+        "0x1a821f5378ba279c443f0d78023ae2ab2a759e862c915531331c9b31e8e60e76",
+        "0x2c4729e505e35e6e6fb49f3bf7f8093dc9c592d6fbbb4e96eac10f15f49d3781"
+      ]
+    },
+    {
+      "description": "Large values permutation",
+      "input": [
+        "0xFFFFFFFFFFFFFFFF",
+        "0x123456789ABCDEF0",
+        "0xFEDCBA0987654321"
+      ],
+      "expected": [
+        "0x2643356ee6e0ddee313438684a45ea13c2b5c9798456e0a8fa856894ddd55197",
+        "0x2a3f397f6f901e5c774f00f91f826160d744ad050b9bfd62d2248cad43085513",
+        "0x156849bfc01db5bbd6d769ed7d55831e3deb249c997594b3ea7e2a07325cb415"
+      ]
+    }
+  ],
+  "hash_tests": [
+    {
+      "description": "Hash empty input",
+      "input": [],
+      "expected": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "description": "Hash single element [1]",
+      "input": [
+        "0x1"
+      ],
+      "expected": "0x1b57ede2db252135726698f6aa7afb089bb4ef317a40a61494550dc31bb32dec"
+    },
+    {
+      "description": "Hash two elements [1, 2]",
+      "input": [
+        "0x1",
+        "0x2"
+      ],
+      "expected": "0x07439c5dec177f98b72bfa1c517bd70cdc80fb0c190769114fe2c96f9a7cab8b"
+    },
+    {
+      "description": "Hash multiple elements [1, 2, 3, 4, 5]",
+      "input": [
+        "0x1",
+        "0x2",
+        "0x3",
+        "0x4",
+        "0x5"
+      ],
+      "expected": "0x131d2f6df70a63128819595c0d28214b6faee34e724ceea51dceced598ec0eb8"
+    }
+  ],
+  "compress2_tests": [
+    {
+      "description": "Compress2 zero inputs",
+      "a": "0x0",
+      "b": "0x0",
+      "expected": "0x151e92826ab6c8f53c69d8abce416c14d87cea2e26235418fe8c98f60270f087"
+    },
+    {
+      "description": "Compress2 one and two",
+      "a": "0x1",
+      "b": "0x2",
+      "expected": "0x07439c5dec177f98b72bfa1c517bd70cdc80fb0c190769114fe2c96f9a7cab8b"
+    },
+    {
+      "description": "Compress2 large values",
+      "a": "0x123456789ABCDEF0",
+      "b": "0xFEDCBA0987654321",
+      "expected": "0x2831373262756ac86c27df69db71fc15e69b8cd8398c101dc798400b7eb07f81"
+    }
+  ],
+  "bytes_hash_tests": [
+    {
+      "description": "Hash empty bytes with generic domain",
+      "domain": "0x53494742",
+      "data": "",
+      "expected": "0x1fde141f39f0c43ac051c992bd5fb4894684db3bcc8089e64d1922d804d3f2ac"
+    },
+    {
+      "description": "Hash 'hello' with generic domain",
+      "domain": "0x53494742",
+      "data": "68656c6c6f",
+      "expected": "0x22b83f612606e7ec43eab3cc0caed038575710fc1bd1c4ff8fe7a9ec166facf1"
+    },
+    {
+      "description": "Hash 'hello' with POET domain",
+      "domain": "0x5347504e",
+      "data": "68656c6c6f",
+      "expected": "0x0698fd33b77f74138fdbaad0051e1b17ff7e420cfe6e5a5288304e95acf35d20"
+    }
+  ]
+}

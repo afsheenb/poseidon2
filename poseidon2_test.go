@@ -2,6 +2,7 @@ package poseidon2
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -50,7 +51,13 @@ type TestVectors struct {
 
 // loadTestVectors loads KAT from JSON file
 func loadTestVectors(t *testing.T) *TestVectors {
-	data, err := os.ReadFile("kat/kat.json")
+	file, err := os.Open("kat/kat.json")
+	if err != nil {
+		t.Fatalf("Failed to open test vectors: %v", err)
+	}
+	defer file.Close()
+	
+	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		t.Fatalf("Failed to read test vectors: %v", err)
 	}
